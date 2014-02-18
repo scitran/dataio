@@ -5,15 +5,19 @@ XXX
 
 """
 
-
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
+from distutils.core import setup
 
 setup(name='nimsdata',
-    packages=['nimsdata', 'nimsdata.pfile'],
-    package_data={'nimsdata':['nimsdata/*.py'],
-                  'nimsdata.pfile':[ 'nimsdata/pfile/*.py']})
+      py_modules=['mkpfile',
+                  'nimsbehavior',
+                  'nimsdata',
+                  'nimsdicom',
+                  'nimsmontage',
+                  'nimsmrdata',
+                  'nimsnifti',
+                  'nimsphysio',
+                  'nimspng',
+                  'tempdir',
+                  'nimsraw'],
+    packages=['pfile'],
+    package_data={'pfile':[ 'nimsdata/pfile/*.py']})
