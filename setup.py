@@ -8,16 +8,7 @@ XXX
 from distutils.core import setup
 
 setup(name='nimsdata',
-      py_modules=['mkpfile',
-                  'nimsbehavior',
-                  'nimsdata',
-                  'nimsdicom',
-                  'nimsmontage',
-                  'nimsmrdata',
-                  'nimsnifti',
-                  'nimsphysio',
-                  'nimspng',
-                  'tempdir',
-                  'nimsraw'],
-    packages=['pfile'],
-    package_data={'pfile':[ 'nimsdata/pfile/*.py']})
+      packages = ['nimsdata', 'nimsdata.pfile'],
+      package_dir = {'nimsdata':'.', 'nimsdata.pfile': './pfile'},
+      package_data={'nimsdata': ['./*.py'],
+                    'nimsdata.pfile':[ './pfile/*.py']})
