@@ -3,5 +3,6 @@
     "gephysio": "medimg.gephysio.GEPhysio",
     "nifti": "medimg.nifti.Nifti",
     "behavior": "medimg.behavior.Behavior",
-    "pfile": "medimg.pfile.PFile"
+    "pfile": "medimg.pfile.PFile",
+    "meeg": "meeg.MEEGReader"
 }
