@@ -23,7 +23,7 @@ subclass.
 
 """
 
-import os
+from os import path as op
 import abc
 import copy
 import json
@@ -39,9 +39,10 @@ log = logging.getLogger(__name__)
 warnings.simplefilter('ignore', FutureWarning)
 
 # note: readers/writers.json will never contain datetime, or objects that require bson.json_util
-READERS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readers.json')))
-WRITERS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'writers.json')))
-MODULES = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules.json')))
+READERS = json.load(open(op.join(op.dirname(op.abspath(__file__)),
+                                 'readers.json')))
+WRITERS = json.load(open(op.join(op.dirname(op.abspath(__file__)), 'writers.json')))
+MODULES = json.load(open(op.join(op.dirname(op.abspath(__file__)), 'modules.json')))
 
 
 project_properties = {
@@ -308,8 +309,9 @@ def get_handler(filetype, handlerdict):
     try:
         mod, klass = map(str, handlerdict.get(filetype).rsplit('.', 1))
         handler = getattr(__import__(mod, globals(), fromlist=[klass]), klass)
-    except (ImportError, AttributeError):
-        raise DataError('no handler for filetype %s' % filetype, log_level=logging.ERROR)
+    except (ImportError, AttributeError) as exp:
+        raise DataError('no handler for filetype %s (%s)' % (filetype, exp),
+                        log_level=logging.ERROR)
     return handler
 
 
@@ -385,12 +387,12 @@ def parse(path, filetype=None, load_data=False, ignore_json=False, debug=False, 
 
     """
     log.debug('parse start: %s' % str(datetime.datetime.now()))
-    if not os.path.exists(path):
+    if not op.exists(path):
         raise DataError('input path %s not found' % path, log_level=logging.ERROR)
-    if os.path.isdir(path):
+    if op.isdir(path):
         raise DataError('directory input not implemented', log_level=logging.ERROR)
-    if os.path.isfile(path) and not tarfile.is_tarfile(path):
-        if path.endswith('.7.gz') or path.endswith('.7'):   # single P12345.7 or P12345.7.gz
+    if op.isfile(path) and not tarfile.is_tarfile(path):
+        if op.splitext(path)[1] in ('.7.gz', '.7'):   # single P12345.7 or P12345.7.gz
             filetype = 'pfile'
         else:
             raise DataError('non tar-files not implemented', log_level=logging.ERROR)
@@ -553,7 +555,7 @@ class Reader(object):
         self._schema_init(self.project_properties)
         self._schema_init(self.session_properties)
         self._schema_init(self.acquisition_properties)
-        self.filepath = os.path.abspath(path)
+        self.filepath = op.abspath(path)
         self.data = None
         self.metadata_status = 'empty'
         self.failure_reason = None
@@ -733,7 +735,7 @@ if __name__ == '__main__':
     import sys
     import argparse
 
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.insert(0, op.dirname(op.dirname(op.abspath(__file__))))
     import data
 
     log = logging.getLogger('data')
@@ -754,10 +756,10 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.INFO)
 
-    if not os.path.exists(args.input):
+    if not op.exists(args.input):
         raise DataError('could not find input file %s' % args.input)
 
-    outbase = args.outbase or os.path.basename(os.path.splitext(args.input.rstrip('/'))[0])
+    outbase = args.outbase or op.basename(op.splitext(args.input.rstrip('/'))[0])
 
     def cast_if_number(s):
         try:
