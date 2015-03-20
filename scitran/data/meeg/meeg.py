@@ -7,10 +7,11 @@ duh-docs duh-docs duh-docs duh-docs-docs-docs. plz. kthnxbai.
 """
 
 import logging
-import abc
+import tarfile
 from bson.tz_util import FixedOffset
 
-import mne
+from mne.io.meas_info import read_meas_info
+from mne.io.open import fiff_open
 
 from .. import data
 
@@ -311,6 +312,11 @@ class MEEGReader(data.Reader):
 
     def __init__(self, path, load_data=False):
         super(MEEGReader, self).__init__(path, load_data)
+        with tarfile.open(path) as tar:
+            for member in tar.getmembers():
+                fid, tree = fiff_open(tar.extractfile(member))[:2]
+                info = read_meas_info(fid, tree)[0]
+                print(info)
 
     def load_data(self):
         super(MEEGReader, self).load_data()
