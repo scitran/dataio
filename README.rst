@@ -37,6 +37,7 @@ numpy            1.9.0
 nibabel          1.4.0dev
 pydicom          0.9.9
 dcmstack         0.7.0dev
+pymongo          2.8
 ================ ====================
 
 
