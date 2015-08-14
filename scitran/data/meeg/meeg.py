@@ -1,38 +1,23 @@
 """
-scitran.data.eegmeg
-===================
+scitran.data.meeg
+=================
 
-duh-docs duh-docs duh-docs duh-docs-docs-docs. plz. kthnxbai.
+Data format for M/EEG data using mne-python.
 
 """
 
 import logging
-import datetime
-
-import mne-python
+import bson
+import abc
 
 from .. import data
 
 log = logging.getLogger(__name__)  # root logger already configured
 
-project_properties = data.project_properties   # see data.py for expected project properties
+# see data.py for expected project properties
+project_properties = data.project_properties
 
 _session_properties = {  # add additional session properties
-    'exam_uid': {
-        'field': 'exam_uid',
-        'title': 'DICOM UID',
-        'type': 'string',
-    },
-    'exam': {
-        'field': 'exam_no',
-        'title': 'Exam Number',
-        'type': 'integer',
-    },
-    'patient_id': {
-        'field': 'patient_id',
-        'title': 'Patient ID',
-        'type': 'string',
-    },
     'subject': {
         'type': 'object',
         'properties': {
@@ -52,234 +37,16 @@ _session_properties = {  # add additional session properties
                 'type': 'string',
                 'format': 'date',
             },
-            'sex': {
-                'field': 'subj_sex',
-                'title': 'Sex',
-                'type': 'string',
-                'enum': ['male', 'female'],
-            },
-        },
-    },
-    'instrument': {
-        'title': 'Instrument',  # FIXME: should be surrounded by an array of multiple instruments
-        'type': 'object',
-        'properties': {
-            'manufacturer': {
-                'field': 'manufacturer',
-                'title': 'Manufacturer',
-                'type': 'string',
-            },
-            'model': {
-                'field': 'manufacturer_model',
-                'title': 'Model',
-                'type': 'string',
-            },
-            'uid': {
-                'field': 'scanner_name',
-                'title': 'ID',
-                'type': 'string',
-            },
         },
     },
 }
-session_properties = data.dict_merge(data.session_properties, _session_properties)
+session_properties = data.dict_merge(data.session_properties,
+                                     _session_properties)
 
 _acquisition_properties = {  # add custom acquisition properties
-    'series_uid': {
-        'field': 'series_uid',
-        'title': 'DICOM UID',
-        'type': 'string',
-    },
-    'series': {
-        'field': 'series_no',
-        'title': 'Series',
-        'type': 'integer',
-    },
-    'acquisition': {
-        'field': 'acq_no',
-        'title': 'Acquisition',
-        'type': 'integer',
-    },
-    'psd': {
-        'field': 'psd_name',
-        'title': 'PSD',
-        'type': 'string',
-        'maxLength': 64,
-    },
-    'tr': {
-        'field': 'tr',
-        'title': 'Tr',
-        'type': 'number',
-    },
-    'te': {
-        'field': 'te',
-        'title': 'Te',
-        'type': 'number',
-    },
-    'ti': {
-        'field': 'ti',
-        'title': 'Ti',
-        'type': 'number',
-    },
-    'flip_angle': {
-        'field': 'flip_angle',
-        'title': 'Flip Angle',
-        'type': 'integer',
-    },
-    'pixel_bandwidth': {
-        'field': 'pixel_bandwidth',
-        'title': 'Pixel Bandwidth',
-        'type': 'number',
-    },
-    'num_averages': {
-        'field': 'num_averages',
-        'title': 'Averages',
-        'type': 'integer',
-    },
-    'num_bands': {
-        'field': 'num_bands',
-        'title': 'Bands',
-        'type': 'integer',
-    },
-    'num_echos': {
-        'field': 'num_echos',
-        'title': 'Echos',
-        'type': 'integer',
-    },
-    'num_slices': {
-        'field': 'num_slices',
-        'title': 'Slices',
-        'type': 'integer',
-    },
-    'num_timepoints': {
-        'field': 'num_timepoints',
-        'title': 'Time Points',
-        'type': 'integer',
-    },
-    'rx_coil': {
-        'field': 'receive_coil_name',
-        'title': 'Coil',
-        'type': 'string',
-        'maxLength': 64,
-    },
-    'num_receivers': {
-        'field': 'num_receivers',
-        'title': 'Receivers',
-        'type': 'integer',
-    },
-    'protocol': {
-        'field': 'protocol_name',
-        'title': 'Protocol',
-        'type': 'string',
-        'maxLength': 64,
-    },
-    'size': {
-        'title': 'Size',
-        'type': 'object',
-        'properties': {
-            'x': {
-                'field': 'size_x',
-                'title': 'X',
-                'type': 'integer',
-            },
-            'y': {
-                'field': 'size_y',
-                'title': 'Y',
-                'type': 'integer',
-            },
-        },
-    },
-    'fov': {
-        'title': 'Field of View',
-        'type': 'object',
-        'properties': {
-            'x': {
-                'field': 'fov_x',
-                'title': 'X',
-                'type': 'integer',
-            },
-            'y': {
-                'field': 'fov_y',
-                'title': 'Y',
-                'type': 'integer',
-            },
-        },
-    },
-    'mm_per_voxel': {
-        'title': 'mm per Voxel',
-        'type': 'object',
-        'properties': {
-            'x': {
-                'field': 'mm_per_vox_x',
-                'title': 'X',
-                'type': 'number',
-            },
-            'y': {
-                'field': 'mm_per_vox_y',
-                'title': 'Y',
-                'type': 'number',
-            },
-            'z': {
-                'field': 'mm_per_vox_z',
-                'title': 'Z',
-                'type': 'number',
-            },
-        },
-    },
-    'effective_echo_spacing': {
-        'field': 'effective_echo_spacing',
-        'title': 'Effective Echo Spacing',
-        'type': 'number',
-    },
-    'phase_encode_direction': {
-        'field': 'phase_encode_direction',
-        'title': 'Phase-encode Direction',
-        'type': 'integer',
-    },
-    'duration': {
-        'field': 'duration',
-        'title': 'Duration',
-        'type': 'number',
-    },
-    'prescribed_duration': {
-        'field': 'prescribed_duration',
-        'title': 'Prescribed Duration',
-        'type': 'number',
-    },
-    'slice_encode_undersample': {
-        'field': 'slice_encode_undersample',
-        'title': 'Slice Encode Undersample',
-        'type': 'integer',
-    },
-    'phase_encode_undersample': {
-        'field': 'phase_encode_undersample',
-        'title': 'Phase Encode Undersample',
-        'type': 'integer',
-    },
-    'device': {
-        'field': 'scanner_name',
-        'title': 'Device',
-        'type': 'string',
-        'maxLength': 64,
-    },
-    'acquisition_matrix': {
-        'title': 'Acquisition Matrix',
-        'type': 'object',
-        'properties': {
-            'x': {
-                'field': 'acquisition_matrix_x',
-                'title': 'X',
-                'type': 'number',
-            },
-            'y': {
-                'field': 'acquisition_matrix_y',
-                'title': 'Y',
-                'type': 'number',
-            },
-        },
-    },
 }
-acquisition_properties = data.dict_merge(data.acquisition_properties, _acquisition_properties)
+acquisition_properties = data.dict_merge(data.acquisition_properties,
+                                         _acquisition_properties)
 
 
 class MEEGError(data.DataError):
@@ -294,15 +61,15 @@ class MEEGReader(data.Reader):
     path : str
         path to input file
     load_data : boolean
-        indicate if a reader should attempt to immediately load all data. default False.
-
+        indicate if a reader should attempt to immediately load all data.
+        Default False.
     """
     project_properties = project_properties
     session_properties = session_properties
     acquisition_properties = acquisition_properties
 
     domain = u'meeg'
-    filetype = u'somefiletype'   # filetype within meeg domain
+    filetype = u'FIF'   # filetype within meeg domain
     state = ['orig']             # usually an 'orig' raw file gets 'reaped'
 
     @abc.abstractmethod
@@ -331,7 +98,8 @@ class MEEGReader(data.Reader):
 
     @property
     def nims_session_label(self):
-        return self.study_datetime and self.study_datetime.strftime('%Y-%m-%d %H:%M')
+        return (self.study_datetime and
+                self.study_datetime.strftime('%Y-%m-%d %H:%M'))
 
     @property
     def nims_session_subject(self):
@@ -343,7 +111,10 @@ class MEEGReader(data.Reader):
 
     @property
     def nims_acquisition_label(self):
-        return '%d.%d' % (self.series_no, self.acq_no) if self.acq_no is not None else str(self.series_no)
+        if self.acq_no is not None:
+            return '%d.%d' % (self.series_no, self.acq_no)
+        else:
+            return str(self.series_no)
 
     @property
     def nims_acquisition_description(self):
@@ -353,7 +124,8 @@ class MEEGReader(data.Reader):
     def nims_file_name(self):
         if self.acquisition_id:  # as in pfile json header
             return self.acquisition_id + '_' + self.filetype
-        return self.series_uid + ('_' + str(self.acq_no) if self.acq_no is not None else '') + '_' + self.filetype
+        extra = '_' + str(self.acq_no) if self.acq_no is not None else ''
+        return self.series_uid + extra + '_' + self.filetype
 
     @property
     def nims_file_ext(self):
@@ -369,7 +141,8 @@ class MEEGReader(data.Reader):
 
     @property
     def nims_file_kinds(self):
-        # this really SHOULDn't be scan_type, because not all medical images will set a scan type
+        # this really SHOULDn't be scan_type, because not all medical images
+        # will set a scan type
         # pick a more general name. that is suitable for non-scan type
         # or define this property in EVERY class...
         return [self.scan_type]
@@ -387,7 +160,7 @@ class MEEGReader(data.Reader):
         pass  # FIXME
 
 
-class EEGMEGWriter(data.Writer):
+class MEEGWriter(data.Writer):
 
     """
     Base MR data writer class.
@@ -397,4 +170,4 @@ class EEGMEGWriter(data.Writer):
     """
 
     def write(cls, metadata, imagedata, outbase):
-        super(MedImgWriter, cls).write(metadata, imagedata, outbase)
+        super(MEEGWriter, cls).write(metadata, imagedata, outbase)
