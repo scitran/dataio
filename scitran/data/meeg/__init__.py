@@ -1,1 +1,1 @@
-from .meeg import MEEGReader, MEEGWriter, MEEGError
+from .meeg import MEEGReader, MEEGError

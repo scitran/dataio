@@ -7,10 +7,17 @@ Data format for M/EEG data using mne-python.
 """
 
 import logging
+import tempfile
 import bson
-import abc
+import zipfile
+import json
+import os
+from os import path as op
+import shutil
 
-from .. import data
+import mne
+
+from .. import data, util
 
 log = logging.getLogger(__name__)  # root logger already configured
 
@@ -59,9 +66,9 @@ class MEEGReader(data.Reader):
     Parameters
     ----------
     path : str
-        path to input file
+        Path to input file.
     load_data : boolean
-        indicate if a reader should attempt to immediately load all data.
+        Indicate if a reader should attempt to immediately load all data.
         Default False.
     """
     project_properties = project_properties
@@ -69,67 +76,107 @@ class MEEGReader(data.Reader):
     acquisition_properties = acquisition_properties
 
     domain = u'meeg'
-    filetype = u'FIF'   # filetype within meeg domain
-    state = ['orig']             # usually an 'orig' raw file gets 'reaped'
+    filetype = u'meeg'
+    state = ['orig']
 
-    @abc.abstractmethod
-    def __init__(self, path, load_data=False):
-        super(MEEGReader, self).__init__(path, load_data)
+    def __init__(self, path, load_data=False, timezone=None):
+        super(MEEGReader, self).__init__(path, load_data, timezone)
+        self._temp_dir = tempfile.mkdtemp()
+        os.mkdir(op.join(self._temp_dir, 'reap'))
+        try:
+            with zipfile.ZipFile(self.filepath, 'r') as zip_file:
+                hdr = json.loads(zip_file.comment,
+                                 object_hook=util.datetime_decoder)['header']
+                self.project_name = hdr['project']
+                zip_fnames = [op.join('reap', op.basename(fname))
+                              for fname in zip_file.namelist()]
+                fnames = []
+                for fname in zip_fnames:
+                    if fname.endswith('.fif'):
+                        fnames.append(zip_file.extract(fname, self._temp_dir))
+                # load raw files
+                self._raws = [mne.io.read_raw_fif(fname, allow_maxshield=True,
+                                                  preload=load_data)
+                              for fname in fnames]
+        except Exception as e:
+            raise MEEGError(e)
 
-    @abc.abstractmethod
+    def __del__(self):
+        shutil.rmtree(self._temp_dir)
+
     def load_data(self):
         super(MEEGReader, self).load_data()
-
-    @property
-    def nims_metadata_status(self):
-        return self.metadata_status
-
-    @property
-    def nims_group_id(self):
-        return self.group_name
+        for raw in self._raws:
+            raw.preload_data()
 
     @property
     def nims_project(self):
         return self.project_name
 
     @property
+    def nims_group_id(self):
+        # XXX
+        return 'group_id'
+
+    @property
     def nims_session_id(self):
-        return self.exam_uid
+        # XXX
+        return 'session_id'
 
     @property
     def nims_session_label(self):
-        return (self.study_datetime and
-                self.study_datetime.strftime('%Y-%m-%d %H:%M'))
+        # XXX
+        return 'session_label'
 
     @property
     def nims_session_subject(self):
-        return self.subj_code
-
-    @property
-    def nims_acquisition_id(self):
-        return 'not implemented'
+        # XXX
+        return 'subj_code'
 
     @property
     def nims_acquisition_label(self):
-        if self.acq_no is not None:
-            return '%d.%d' % (self.series_no, self.acq_no)
-        else:
-            return str(self.series_no)
+        # XXX
+        return 'series_no'
 
     @property
     def nims_acquisition_description(self):
-        return self.series_desc
+        # XXX get from info
+        return 'foobar'
 
     @property
     def nims_file_name(self):
-        if self.acquisition_id:  # as in pfile json header
-            return self.acquisition_id + '_' + self.filetype
-        extra = '_' + str(self.acq_no) if self.acq_no is not None else ''
-        return self.series_uid + extra + '_' + self.filetype
+        # XXX what are the constraints on this?
+        return 'foo'
+
+    @property
+    def nims_file_kinds(self):
+        # XXX
+        return ['FIF']
+
+    @property
+    def nims_acquisition_id(self):
+        # XXX
+        return 'nims_acquisition_id'
+
+    @property
+    def nims_timestamp(self):
+        # XXX
+        return self.timestamp.replace(tzinfo=bson.tz_util.FixedOffset(-7 * 60, 'pacific')) if self.timestamp else None # FIXME: use pytz
+
+    @property
+    def nims_timezone(self):
+        # XXX
+        pass  # FIXME
+
+    # XXX why are these not implemented at the data.Reader level?
+
+    @property
+    def nims_metadata_status(self):
+        return self.metadata_status
 
     @property
     def nims_file_ext(self):
-        return '.tgz'
+        return '.zip'
 
     @property
     def nims_file_domain(self):
@@ -140,34 +187,5 @@ class MEEGReader(data.Reader):
         return self.filetype
 
     @property
-    def nims_file_kinds(self):
-        # this really SHOULDn't be scan_type, because not all medical images
-        # will set a scan type
-        # pick a more general name. that is suitable for non-scan type
-        # or define this property in EVERY class...
-        return [self.scan_type]
-
-    @property
     def nims_file_state(self):
         return self.state
-
-    @property
-    def nims_timestamp(self):
-        return self.timestamp.replace(tzinfo=bson.tz_util.FixedOffset(-7 * 60, 'pacific')) if self.timestamp else None # FIXME: use pytz
-
-    @property
-    def nims_timezone(self):
-        pass  # FIXME
-
-
-class MEEGWriter(data.Writer):
-
-    """
-    Base MR data writer class.
-
-    Cannot be instantiated.
-
-    """
-
-    def write(cls, metadata, imagedata, outbase):
-        super(MEEGWriter, cls).write(metadata, imagedata, outbase)
