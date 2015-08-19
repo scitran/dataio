@@ -8,14 +8,14 @@ Data format for M/EEG data using mne-python.
 
 import logging
 import tempfile
-import bson
 import zipfile
 import json
+import warnings
 import os
 from os import path as op
 import shutil
 
-import mne
+from mne.io import read_raw_fif
 
 from .. import data, util
 
@@ -95,9 +95,10 @@ class MEEGReader(data.Reader):
                     if fname.endswith('.fif'):
                         fnames.append(zip_file.extract(fname, self._temp_dir))
                 # load raw files
-                self._raws = [mne.io.read_raw_fif(fname, allow_maxshield=True,
-                                                  preload=load_data)
-                              for fname in fnames]
+                with warnings.catch_warnings(record=True):
+                    self._raws = [read_raw_fif(fname, allow_maxshield=True,
+                                               preload=load_data)
+                                  for fname in fnames]
         except Exception as e:
             raise MEEGError(e)
 
@@ -158,17 +159,15 @@ class MEEGReader(data.Reader):
         # XXX
         return 'nims_acquisition_id'
 
+    # XXX why are these not implemented at the data.Reader level?
+
     @property
     def nims_timestamp(self):
-        # XXX
-        return self.timestamp.replace(tzinfo=bson.tz_util.FixedOffset(-7 * 60, 'pacific')) if self.timestamp else None # FIXME: use pytz
+        return super(MEEGReader, self).nims_timestamp
 
     @property
     def nims_timezone(self):
-        # XXX
-        pass  # FIXME
-
-    # XXX why are these not implemented at the data.Reader level?
+        return super(MEEGReader, self).nims_timezone
 
     @property
     def nims_metadata_status(self):
