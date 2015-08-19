@@ -2,10 +2,10 @@
 #           Kevin S Hahn
 
 """
-nimsdata.medimg.nimspng
-=======================
+nimsdata.medimg.png
+===================
 
-NIMSMRPNG provides PNG image writing capabilities for medimg datasets.
+PNG provides PNG image writing capabilities for medimg datasets.
 
 """
 

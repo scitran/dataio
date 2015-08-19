@@ -15,7 +15,8 @@ before_install:
     - sudo apt-get install -qq libjpeg-dev && sudo ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib
 
 install:
-    - pip install webapp2 requests webob db-sqlite3 nose numpy==1.9.0 pytz pillow sphinx numpydoc coverage
+    - pip install --no-index -f http://travis-wheels.scikit-image.org numpy==1.9.0 scipy Pillow pytz nose
+    - pip install webapp2 requests webob db-sqlite3 sphinx numpydoc coverage mne
     - pip install git+https://github.com/nipy/nibabel.git
     - pip install git+https://github.com/scitran/pydicom.git@0.9.9_value_vr_mismatch
     - pip install git+https://github.com/moloney/dcmstack.git@6d49fe01235c08ae63c76fa2f3943b49c9b9832d
