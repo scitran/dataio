@@ -673,32 +673,24 @@ class Reader(object):
     def nims_timezone(self):
         return self.timezone
 
-    def __str__(self):  # TODO: tighten this up. or just get rid of it completely
+       def __str__(self):  # TODO: tighten this up. or just get rid of it completely
         properties = []
-        for prop, value in vars(self).iteritems():
-            if prop in ['data', 'imagedata']:
-                continue
-            if prop.startswith('_'):
+        for prop, value in vars(self).iteritems():          
+            if prop in set(['data','imagedata','_']):
                 continue
             if value is None:
-                value = ''
-            properties.append((prop, value))
-
-        properties.sort()
-
+                value = ''        
+            properties.append((prop, value)).sort()
+ 
         for prop in dir(self):
-            value = None
-            if prop in ['data', 'imagedata']:
+            if prop in ['data', 'imagedata'] or not prop.startswith('nims'):
                 continue
-            if not prop.startswith('nims'):
-                continue
-            value = getattr(self, prop)
-            if value is None:
-                value = ''
+            value = getattr(self, prop) if (value is not None) else ''    
             properties.append((prop, str(value)))
-
+ 
         return '\n'.join(['%-30s: %s' % (p, v) for p, v in properties])
-
+     
+ 
 
 class abstractclassmethod(classmethod):
 
