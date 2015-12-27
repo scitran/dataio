@@ -661,7 +661,7 @@ class Reader(object):
     def nims_file_state(self):
         """The state of the file"""
         return self.state
-
+        
     @abc.abstractproperty
     def nims_timestamp(self):
         if self.timestamp and self.timezone:
@@ -673,7 +673,7 @@ class Reader(object):
     def nims_timezone(self):
         return self.timezone
 
-       def __str__(self):  # TODO: tighten this up. or just get rid of it completely
+    def __str__(self):  # TODO: tighten this up. or just get rid of it completely
         properties = []
         for prop, value in vars(self).iteritems():          
             if prop in set(['data','imagedata','_']):
